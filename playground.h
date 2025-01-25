@@ -9,48 +9,75 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 
 #include <stdio.h>
+#include "include/util.h"
+#include "include/color.h"
+#include "include/image.h"
 
 
 /* internal */
 static int quit = 0;
 static int loop = 1;
 
-int settings();
+void settings();
 int setup();
-int draw();
+Image* draw();
 /* internal */
 
 /* user mutable */
 static float internal_fps;
 static unsigned long internal_frameTime = 16666; // default 60fps
 
-static int width = 400;	//default width: 400px
-static int height = 400;	//default height: 400px
+
+static int width = 400;	 // default width: 400px
+static int height = 400; // default height: 400px
+
+static int displayWidth = 1920;
+static int displayHeight = 1080;
+static int global_x = 100;
+static int global_y = 100;
+
+static int mouseX;
+static int mouseY;
+
+static long frame = 0;
+
+static Image* screen;
 /* user mutable */
 
 
+void settings() {
+	// displayWidth = GetSystemMetrics(SM_CXMAXIMIZED);
+    // displayHeight = GetSystemMetrics(SM_CYMAXIMIZED);
+	
+}
+
 
 static void frameRate(float fps) {
-    if(fps <= 0 || fps >= 1000000) {
-        printf("Invalid frameRate: %.2ffps", fps);
-    } else {
-        internal_fps = fps;
-        internal_frameTime = (unsigned long)(1000000.0f/fps);
-    }
+	if (fps <= 0 || fps >= 1000000) {
+		printf("Invalid frameRate: %.2ffps", fps);
+	} else {
+		internal_fps = fps;
+		internal_frameTime = (unsigned long)(1000000.0f / fps);
+	}
 }
 
 static void noLoop() {
-    loop = 0;
+	loop = 0;
 }
 
 static void size(int w, int h) {
-    if(w <= 0 || h <= 0) {
-        printf("Invalid size: (w: %d, h: %d)", w, h);
+	if (w <= 0 || h <= 0) {
+		printf("Invalid size: (w: %d, h: %d)", w, h);
 		quit = 1;
-    } else {
-        width = w;
-        height = h;
-    }
+	} else {
+		width = w;
+		height = h;
+	}
+}
+
+static void fullScreen() {
+	width = displayWidth;
+	height = displayHeight;
 }
 
 #pragma GCC diagnostic pop
@@ -75,6 +102,13 @@ int draw() {
 #include "util.h"
 #include "imageUtil.h"
 #include "drawUtil.h"
+
+
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
+}
 
 int draw() {	
 	startTime();	
@@ -115,6 +149,12 @@ int draw() {
 #include "include/imageFile.h"
 #include "include/draw.h"
 
+
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
+}
 
 int draw() {	
 	startTime();	
@@ -162,6 +202,12 @@ int draw() {
 #include "perlinNoise.h"
 #include "drawUtil.h"
 
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
+}
+
 int draw() {	
 	startTime();	
 	
@@ -204,17 +250,14 @@ int draw() {
 
 #if 0 // flowfield ⬎
 
-
 #include <math.h>
-#include "util.h"
-#include "color.h"
-#include "imageUtil.h"
-#include "perlinNoise.h"
-#include "drawUtil.h"
+#include "include/util.h"
+#include "include/color.h"
+#include "include/image.h"
+#include "include/imageFile.h"
+#include "include/noise.h"
+#include "include/draw.h"
 
-
-int width = 1620;
-int height = 1080;
 
 float noiseScale = 500.0;
 
@@ -226,23 +269,35 @@ typedef struct {
 } Particle;
 
 
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
+}
+
 int draw() {	
 	startTime();	
 	
-	Image img;
-	createImage(&img, width, height, RGB8);
+	Image *img = createImage(width, height);
 
-	background(&img, RGB(21, 8, 50));
+	background(img, RGB(21, 8, 50));
 
+	makeWorley(20);
 
-	const int numParticles = 400;
+	int numParticles = 400;
 
-	Particle particels[numParticles];
+	Particle* particels;
+	particels = (Particle*)malloc(numParticles * sizeof(Particle));
+
+	if (particels == NULL) {
+        printFunctionError("memory allocation failed", "draw()");
+		quit = 1;        
+    }
 
 	for(int i = 0; i < numParticles; i++) {		
 		// vec2 pos = {i* floor(width *1.0f / numParticles), height * (i *1.0f / numParticles)};	// y = x
 		// vec2 pos = {i* floor(width *1.0f / numParticles), height/2 +(height/2* sin((i *1.0f / numParticles) *2.0 *TWO_PI))};	// y = sin(x *2)	
-		vec2 pos = {floor(random() *width), floor(random() *height)};		
+		vec2 pos = {floor(randomInt(width)), floor(randomInt(height))};		
 		float speed = 1.2;
 
 		size_t size = sizeof(color_gradient_cerulean) / sizeof(color_gradient_cerulean[0]);
@@ -253,20 +308,23 @@ int draw() {
 	}
 
 	for(int cnt = 0; cnt < 800; cnt++) {
-		for(int i = 0; i < numParticles; i++) {
-			double angle = map(perlin((particels[i].pos.x1 -2200) /noiseScale, (particels[i].pos.x2 +300) /noiseScale, 0.5, 4), -1, 1, 0, 1) *TWO_PI *noiseScale;	
+		for(int i = 0; i < numParticles; i++) {			
+			// double angle = map(perlin((particels[i].pos.x1 -2200) /noiseScale, (particels[i].pos.x2 +300) /noiseScale, 0.5, 4), -1, 1, 0, 1) *TWO_PI *noiseScale;	
+			double angle = worley((particels[i].pos.x1), (particels[i].pos.x2), width, height) *TWO_PI *noiseScale;	
 			particels[i].pos.x1 += (float)(cos(angle) *particels[i].speed);
 			particels[i].pos.x2 += (float)(sin(angle) *particels[i].speed);
-			if(isPIPf(particels[i].pos.x1, particels[i].pos.x2, 0, 0, width, height) == 0) {
-				particels[i].pos.x1 = floor(random() *width);
-				particels[i].pos.x2 = floor(random() *height);
+			if (isPIPf(particels[i].pos.x1, particels[i].pos.x2, 0, 0, width, height) < 0) {
+				particels[i].pos.x1 = width/2;
+				particels[i].pos.x2 = height/2;
+				// particels[i].pos.x1 = floor(randomInt(width));
+				// particels[i].pos.x2 = floor(randomInt(height));
 			}
 			fill(particels[i].col);
-			circle(&img, particels[i].pos.x1, particels[i].pos.x2, 2);
+			circle(img, particels[i].pos.x1, particels[i].pos.x2, 2);
 		}
-	}
+	}	
 
-	saveBMP(&img, "C:/Users/eleftherakis/Downloads/bild.bmp");		
+	saveBMP(img, "C:/Users/eleftherakis/Downloads/bild.bmp", RGB8);		
 	
 	unsigned long t = stopTime();
 	printInfo("took: %lu us (=> %d ms)\n", t, (int)floor(t/1000.0));
@@ -276,7 +334,109 @@ int draw() {
 
 #endif // flowfield ⬏
 
-#if 1 // draw calls test⬎
+#if 0 // subpixelart ⬎
+
+#include <math.h>
+#include "include/util.h"
+#include "include/color.h"
+#include "include/image.h"
+#include "include/imageFile.h"
+#include "include/draw.h"
+
+
+int setup() {
+	size(120, 60);
+	noLoop();
+	return 0;
+}
+
+int draw() {
+	startTime();
+
+	Image *img = createImage(width, height);
+	circle(img, 64, 32, 24);
+	line(img, 0, 0, 128, 64);
+	line(img, 128, 0, 0, 64);
+	grayscaleImage(img);	
+
+	Image *out = createImage(img->width/3, img->height/3);	
+
+	for(int y = 0; y < height; y++) {
+		for(int x = 0; x < width; x+=3) {
+			int r = brightness(getPixel(img, x, y));
+			int g = brightness(getPixel(img, x +1, y));
+			int b = brightness(getPixel(img, x +2, y));
+
+			setPixel(out, x, y, RGB(r, g, b));
+		}
+	}
+
+	saveBMP(out, "C:/Users/eleftherakis/Downloads/subpixelart.bmp", RGB8);
+
+	unsigned long t = stopTime();
+	printInfo("took: %lu us (=> %d ms)\n", t, (int)floor(t / 1000.0));
+
+	return 0;
+}
+
+#endif // subpixelart ⬏
+
+#if 0 // colorfilter ⬎
+
+#include <math.h>
+#include "include/util.h"
+#include "include/color.h"
+#include "include/image.h"
+#include "include/imageFile.h"
+#include "include/draw.h"
+
+
+int setup() {
+	// size(480, 320);
+	noLoop();
+	return 0;
+}
+
+int draw() {
+	startTime();
+
+	// Image *img = createImage(width, height);
+	Image *img = loadBMP("C:/Users/eleftherakis/Downloads/sample1.bmp");
+	size(img->width, img->height);
+	for(int y = 0; y < height; y++) {
+		fill(lerpColors(color_gradient_rainbow, 6, map(y, 0, height, 0, 1)));
+		hline(img, 0, width, y);
+	}
+	fill(0xFF0000);
+	circle(img, 200, 100, 24);	
+
+	Image *out = createImage(img->width, img->height);	
+
+	for(int y = 0; y < height; y++) {
+		for(int x = 0; x < width; x++) {
+			int col = getPixel(img, x, y);
+			int r = red(col);
+			int g = green(col);
+			int b = blue(col);
+
+			int newCol = RGB(r, b, g);
+
+			setPixel(out, x, y, newCol);
+		}
+	}
+
+	saveBMP(img, "C:/Users/eleftherakis/Downloads/color.bmp", RGB8);
+	saveBMP(out, "C:/Users/eleftherakis/Downloads/color_filter.bmp", RGB8);
+
+	unsigned long t = stopTime();
+	printInfo("took: %lu us (=> %d ms)\n", t, (int)floor(t / 1000.0));
+
+	return 0;
+}
+
+#endif // colorfilter ⬏
+
+#if 0 // draw calls test⬎
 
 #include <math.h>
 #include "include/util.h"
@@ -317,17 +477,6 @@ int draw() {
 
 	// lineGradient(out, 0, height, width, 0, 6, color_gradient_rainbow, 6);
 
-	makeWorley(16);
-
-	for(int y = 0; y < height; y++) {
-		for(int x = 0; x < width; x++) {
-			fill(GREY((unsigned char)(255* worley(x, y, width, height))));
-
-			rect(out, x, y, 1, 1);
-		}
-
-	}
-
 	printImage(out, 32, 16);
 	printImageInfo(out);		
 	
@@ -348,6 +497,11 @@ int draw() {
 #include "imageUtil.h"
 #include "windowUtil.h"
 
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
+}
 
 int draw() {
 
@@ -387,13 +541,54 @@ int draw() {
 
 #endif // image test window ⬏
 
+#if 1 // GDI ⬎
+
+#include <stdio.h>
+#include <windows.h>
+
+#include "include/imageFile.h"
+#include "include/draw.h"
+
+
+Image *img;
+
+int setup() {
+
+	// img = createImage(1280, 480);
+	img = loadBMP("C:\\Users\\eleftherakis\\Entwicklung\\C\\c processing\\image archive\\12bild.bmp");
+	// img = loadBMP("C:\\Users\\eleftherakis\\Downloads\\1resized.bmp");
+	
+	// img = scaleImage(img, 0.5);
+	size(img->width, img->height);
+
+	printImage(img, 32, 16);
+
+	// saveBMP(img, "C:\\Users\\eleftherakis\\Downloads\\sampafale1.bmp", 3);
+
+    //noLoop();
+    return 0;
+}
+
+Image* draw() {
+	
+	setPixel(img, mouseX, height-mouseY, RGBA(255, 0, 0, 255));
+	
+	return img;
+}
+
+
+#endif // GDI ⬏
+
+
 #if 0 // template ⬎
 
 #include <stdio.h>
 
 
-void setup() {
-
+int setup() {
+	size(1920, 1080);
+    noLoop();
+    return 0;
 }
 
 int draw() {
