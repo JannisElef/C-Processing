@@ -57,18 +57,18 @@ typedef struct {
 
 
 /* check if Image pointer is valid */
-int checkValid(Image *img, char *originFunction) {
+int checkValid(Image* img, char *originFunction) {
     if(img == NULL) {
         printFunctionError("<*img> is a nullpointer", "%s()", originFunction);
         return -1;
     } else return 0;
 }
 
-int getPixelIndex(Image *img, int x, int y) {
+int getPixelIndex(Image* img, int x, int y) {
     return x + ((img->height -1 -y) * img->width);
 }
 
-int setPixel(Image *img, int x, int y, int col) {    
+int setPixel(Image* img, int x, int y, int col) {    
 
     if(x >= img->width || y >= img->height || x < 0 || y < 0) { // position out of area
         //printFunctionWarning("point not in image => operation will be ignored", "setPixel(x: %d,y: %d) in <img>(w: %d, h: %d)", x, y, img->width, img->height);
@@ -84,7 +84,7 @@ int setPixel(Image *img, int x, int y, int col) {
     }
 }
 
-int getPixel(Image *img, int x, int y) {    
+int getPixel(Image* img, int x, int y) {    
 
     if(x >= img->width || y >= img->height || x < 0 || y < 0) { // position out of area
         //printFunctionWarning("point not in image => operation will be ignored", "getPixel(x: %d,y: %d) in <img>(w: %d, h: %d)", x, y, img->width, img->height);
@@ -94,14 +94,14 @@ int getPixel(Image *img, int x, int y) {
 }
 
 
-Image *createImage(int w, int h) {    
+Image* createImage(int w, int h) {    
     if(w <= 0 || h <= 0) {
         printFunctionError("invalid parameter(s)", "createImage(w: %d, h: %d)", w, h);
         return NULL;
     }
 
     size_t size = w * h;
-    Image *img = (Image*)malloc(sizeof(Image));
+    Image* img = (Image*)malloc(sizeof(Image));
     int *data = (int *)malloc(size * sizeof(int));    
 
     if (!data || !img) {
@@ -119,7 +119,7 @@ Image *createImage(int w, int h) {
 }
 
 /* resize image to a specific width and height */
-Image *resizeImage(Image *src, int newWidth, int newHeight) {
+Image* resizeImage(Image* src, int newWidth, int newHeight) {
 
     if(checkValid(src, "resizeImage") < 0) return NULL;
 
@@ -128,7 +128,7 @@ Image *resizeImage(Image *src, int newWidth, int newHeight) {
         return NULL;
     }
 
-    Image *dest = createImage(newWidth, newHeight);    
+    Image* dest = createImage(newWidth, newHeight);    
     
     float xScale = (float)src->width / newWidth;
     float yScale = (float)src->height / newHeight;
@@ -147,12 +147,12 @@ Image *resizeImage(Image *src, int newWidth, int newHeight) {
 }
 
 /* scale image with a scalar */
-Image *scaleImage(Image *src, float scalar) {
+Image* scaleImage(Image* src, float scalar) {
     return resizeImage(src, (int)(src->width *1.0f *scalar), (int)(src->height *1.0f *scalar));
 }
 
-/* get selected area of image */
-Image *getImage(Image *src, int x, int y, int w, int h) {
+/* get selected area of Image*/
+Image* getImage(Image* src, int x, int y, int w, int h) {
 
     if(checkValid(src, "getImage") < 0) return NULL;
 
@@ -161,7 +161,7 @@ Image *getImage(Image *src, int x, int y, int w, int h) {
         return NULL;
     }
 
-    Image *dest = createImage(w, h);
+    Image* dest = createImage(w, h);
 
     for(int y_ = 0; y_ < dest->height; y_++) {
         for(int x_ = 0; x_ < dest->width; x_++) {
@@ -176,7 +176,7 @@ Image *getImage(Image *src, int x, int y, int w, int h) {
 }
 
 /* paste image into another image at a position (x, y) */
-int putImage(Image *src, Image *dest, int x, int y) {
+int putImage(Image* src, Image* dest, int x, int y) {
     
     if(checkValid(src, "putImage") < 0 || checkValid(dest, "putImage") < 0) return IMAGE_ERROR_NULLPTR;
 
@@ -214,7 +214,7 @@ int putImage(Image *src, Image *dest, int x, int y) {
     return 0;
 }
 
-int grayscaleImage(Image *img) {
+int grayscaleImage(Image* img) {
 
     if(checkValid(img, "grayscaleImage") < 0) return IMAGE_ERROR_NULLPTR;
 
@@ -226,7 +226,7 @@ int grayscaleImage(Image *img) {
     return 0;
 }
 
-int posterizeImage(Image *img, int steps) {
+int posterizeImage(Image* img, int steps) {
     
     if(checkValid(img, "posterizeImage") < 0) return IMAGE_ERROR_NULLPTR;
 
@@ -239,14 +239,14 @@ int posterizeImage(Image *img, int steps) {
 }
 
 
-void printImageInfo(Image *img) {
+void printImageInfo(Image* img) {
     if(checkValid(img, "printImageInfo") >= 0) {
         printInfo("Image (w: %d, h: %d)\t=> %.02f MB pixel data @ 3 BPP\t(%d Bytes)",
                 img->width, img->height, (img->size *3.0f /1000000.0), img->size *3);
     }
 }
 
-void printImage(Image *img, int w, int h) {
+void printImage(Image* img, int w, int h) {
 
     if(checkValid(img, "printImage") >= 0) {
         float xScale = (float)img->width / w;

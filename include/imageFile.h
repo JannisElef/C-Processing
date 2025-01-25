@@ -54,14 +54,14 @@ Image * loadBMP(char *filePath) {
 
         for(size_t i = 0; i < size; i++) {
             if(bytesPerPixel == 3) {
-                img->pixel[i] = RGB(data[(i *bytesPerPixel) +2],
-                                    data[(i *bytesPerPixel) +1],
-                                    data[(i *bytesPerPixel)]);
+                img->pixel[i] = _RGB(data[(i *bytesPerPixel) +2],
+                                     data[(i *bytesPerPixel) +1],
+                                     data[(i *bytesPerPixel) +0]);
             } else {
                 img->pixel[i] = RGBA(data[(i *bytesPerPixel) +3],
                                      data[(i *bytesPerPixel) +2],
                                      data[(i *bytesPerPixel) +1],
-                                     data[(i *bytesPerPixel)]);
+                                     data[(i *bytesPerPixel) +0]);
             }
         }
 
@@ -90,23 +90,24 @@ int saveBMP(Image *img, const char *filePath, int colorspace) {
         int remainder_x = img->width %4;   
         int remainder_y = img->height %4;           
         if(remainder_x != 0 || remainder_y != 0) {
-            img->width += remainder_x;
-            img->height += remainder_y;
-            img->size = img->width *img->height;
+            Image * out = createImage(img->width +remainder_x, img->height +remainder_y);
 
-            printFunctionWarning("dimensions must be a multiple of 4", "saveBMP(...) for <img>(w: %d, h: %d) => (w: %d, h: %d)",
-                                img->width -remainder_x, img->height -remainder_y, img->width, img->height);
+            printFunctionWarning("dimensions must be a multiple of 4 for BMP", "saveBMP(...) for <img>(w: %d, h: %d) => (w: %d, h: %d)",
+                                img->width, img->height, out->width, out->height);
 
-            Image * out = createImage(img->width, img->height);
 
-            putImage(img, out, 0, 0);
+            // putImage(img, out, 0, 0);
 
             for(int y = 0; y < img->height; y++) {
                 for(int x = 0; x < img->width; x++) {
-                    int col = getPixel(out, x, y);
-                    setPixel(img, x, y, col);
+                    int col = getPixel(img, x, y);
+                    setPixel(out, x, y, col);
                 }
-            }            
+            }     
+            img->width = out->width;       
+            img->height = out->height;       
+            img->size = out->size;       
+            img->pixel = out->pixel;       
         }
 
         BMP_FILEHEADER fileHeader = {0};
@@ -129,17 +130,17 @@ int saveBMP(Image *img, const char *filePath, int colorspace) {
 
         for(size_t i = 0; i < img->size; i++) {
             if(colorspace == 3) {
-                data[(i *colorspace) +2]   = red(img->pixel[i]);
-                data[(i *colorspace) +1]   = green(img->pixel[i]);
-                data[(i *colorspace)]      = blue(img->pixel[i]);
+                data[(i *colorspace) +2] = red(img->pixel[i]);
+                data[(i *colorspace) +1] = green(img->pixel[i]);
+                data[(i *colorspace) +0] = blue(img->pixel[i]);
             } else {
-                data[(i *colorspace) +3]   = red(img->pixel[i]);
-                data[(i *colorspace) +2]   = green(img->pixel[i]);
-                data[(i *colorspace) +1]   = blue(img->pixel[i]);
-                data[(i *colorspace)]      = alpha(img->pixel[i]);
+                data[(i *colorspace) +3] = red(img->pixel[i]);
+                data[(i *colorspace) +2] = green(img->pixel[i]);
+                data[(i *colorspace) +1] = blue(img->pixel[i]);
+                data[(i *colorspace) +0] = alpha(img->pixel[i]);
             }
         }
-        fwrite(data, img->size *colorspace, 1, file);
+        fwrite(data, img->size *colorspace, 1, file);            
 
         fclose(file);
 

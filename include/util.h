@@ -15,13 +15,13 @@
 #define TWO_PI      6.2831855
 
 
-/* check if point-in-polygon */
+/* check if point-in-polygon => 0 if yes, -1 if not */
 int isPIP(int x, int y, int areaX, int areaY, int areaW, int areaH) {    
     if(x > areaW || x < areaX || y > areaH || y < areaY) {
         return 0; // is inside
     } else return -1;
 }
-/* check if point-in-polygon (float) */
+/* check if point-in-polygon (float) => 0 if yes, -1 if not */
 int isPIPf(float x, float y, float areaX, float areaY, float areaW, float areaH) {
     if(x > areaW || x < areaX || y > areaH || y < areaY) {
         return 0; // is inside

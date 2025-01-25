@@ -53,7 +53,7 @@ int RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
     return (a << 24) + (r << 16) + (g << 8) + b;
 }
 
-int RGB(unsigned char r, unsigned char g, unsigned char b) {
+int _RGB(unsigned char r, unsigned char g, unsigned char b) {
     return RGBA(r, g, b, 255);
 }
 
