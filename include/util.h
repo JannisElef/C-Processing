@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 
 
 #define QUARTER_PI  0.7853982
@@ -15,17 +17,17 @@
 #define TWO_PI      6.2831855
 
 
-/* check if point-in-polygon => 0 if yes, -1 if not */
+/* check if point-in-polygon => 1 if yes, 0 if not */
 int isPIP(int x, int y, int areaX, int areaY, int areaW, int areaH) {    
-    if(x > areaW || x < areaX || y > areaH || y < areaY) {
-        return 0; // is inside
-    } else return -1;
+    if(x > areaX+ areaW || x < areaX || y > areaY+ areaH || y < areaY) {
+        return 0;
+    } else return 1;
 }
-/* check if point-in-polygon (float) => 0 if yes, -1 if not */
-int isPIPf(float x, float y, float areaX, float areaY, float areaW, float areaH) {
-    if(x > areaW || x < areaX || y > areaH || y < areaY) {
-        return 0; // is inside
-    } else return -1;
+/* check if point-in-polygon (float) => 1 if yes, 0 if not */
+int isPIPf(float x, float y, float areaX, float areaY, float areaW, float areaH) {    
+    if(x > areaX+ areaW || x < areaX || y > areaY+ areaH || y < areaY) {
+        return 0;
+    } else return 1;
 }
 
 float map(float x, float in_min, float in_max, float out_min, float out_max) {

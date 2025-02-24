@@ -186,7 +186,7 @@ void printTAG(char *TAG, int col, const char *msg, ...) {
     updateStyle();
     char tagBuf[16];
     sprintf(tagBuf, " %s ", TAG);
-    print(tagBuf, 0, col);
+    print(tagBuf, 1, col);
     setTextColor(col, 0);
     setBackgroundColor(0, 0);
     resetStyle();
