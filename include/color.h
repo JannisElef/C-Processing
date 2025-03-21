@@ -18,6 +18,7 @@ static int color_gradient_magma[]       = {0x000004, 0x20114B, 0x57157E, 0x8C298
 static int color_gradient_rose[]        = {0x001066, 0x551672, 0x892282, 0xB93495, 0xE64BAC, 0xF380BC, 0xFCAFCB, 0xFFDDD8, 0xFFF4DE}; // lila, magenta, pink, helles pink
 static int color_gradient_cerulean[]    = {0x180055, 0x1B296D, 0x1D4C81, 0x246E96, 0x3091AA, 0x58B4B9, 0x85D5CA, 0xC9F1E4, 0xEAFFF1}; // dunkelblau, petrol, cyan, helles türkis
 static int color_gradient_forest[]      = {0x00313A, 0x0E4D41, 0x1E6A48, 0x31884F, 0x4CA658, 0x79C365, 0xA6DF73, 0xE2F5BD, 0xFFFFE0}; // dunkelgrün, grün, hellgrün, fast weiß
+static int color_gradient_thermal[]     = {0x2e353c, 0x184e77, 0x1a759f, 0x34a0a4, 0x99d98c, 0xd9ed92};
 
 
 struct color {
