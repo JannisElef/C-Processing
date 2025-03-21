@@ -284,6 +284,21 @@ int posterizeImage(Image* img, int steps) {
     return 0;
 }
 
+int getAvgImageCol(Image *img) {
+    int r, g, b;
+
+    int col = 0;
+    for(int i = 0; i < img->size; i++) {
+        col = img->pixel[i];
+        r += red(col);
+        g += green(col);
+        b += blue(col);
+    }
+
+    return rgb((int)(r *1.0f /img->size), (int)(g *1.0f /img->size), (int)(b *1.0f /img->size));
+}
+        
+
 float kernel[3][3] = {{ -1, -1, -1},
                       { -1,  8, -1},
                       { -1, -1, -1}};
