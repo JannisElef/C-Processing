@@ -118,6 +118,25 @@ Image* createImage(int w, int h) {
     return img; 
 }
 
+void destroyImage(Image *img) {
+    free(img->pixel);
+    free(img);
+    img = NULL;
+}
+
+Image *copyImage(Image *src) {
+
+    if(checkValid(src, "copyImage") < 0) return NULL;
+
+    Image *copy = createImage(src->width, src->height);
+
+    for(size_t i = 0; i < src->size; i++) {
+        copy->pixel[i] = src->pixel[i];
+    }
+
+    return copy;
+}
+
 /* resize image to a specific width and height */
 Image* resizeImage(Image* src, int newWidth, int newHeight) {
 
@@ -214,13 +233,40 @@ int putImage(Image* src, Image* dest, int x, int y) {
     return 0;
 }
 
+/* rotates image 90 degrees counterclockwise*/
+Image *rotate90(Image *img) {
+    if(checkValid(img, "rotate90") < 0) return NULL;
+
+    Image *rotated = createImage(img->height, img->width);
+
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            rotated->pixel[j * rotated->width + (rotated->width - 1 - i)] = img->pixel[i * img->width + j];
+        }
+    }
+
+    return rotated;
+}
+
 int grayscaleImage(Image* img) {
 
     if(checkValid(img, "grayscaleImage") < 0) return IMAGE_ERROR_NULLPTR;
 
-    for(unsigned int i = 0; i < img->size; i++) {
+    for(size_t i = 0; i < img->size; i++) {
         int col = img->pixel[i];
-        img->pixel[i] = GREY(brightness(col));
+        img->pixel[i] = gray(brightness(col));
+    }
+
+    return 0;
+}
+
+int thresholdImage(Image *img, int thresholdValue) {
+    if(checkValid(img, "thresholdImage") < 0) return IMAGE_ERROR_NULLPTR;
+
+    for(unsigned int i = 0; i < img->size; i++) {
+        int val = brightness(img->pixel[i]);
+        if(val < thresholdValue) img->pixel[i] = 0xFF000000; // black
+        else img->pixel[i] = 0xFFFFFFFF; // white
     }
 
     return 0;
@@ -238,6 +284,44 @@ int posterizeImage(Image* img, int steps) {
     return 0;
 }
 
+float kernel[3][3] = {{ -1, -1, -1},
+                      { -1,  8, -1},
+                      { -1, -1, -1}};
+
+Image *edgeDetection(Image *img, int bgCol) { // https://processing.org/examples/edgedetection.html
+    if(checkValid(img, "edgeDetection") < 0) return NULL;
+    
+    Image *grayImg = copyImage(img);
+    grayscaleImage(grayImg);
+
+
+    Image *edgeImg = createImage(img->width, img->height);
+
+    for (int y = 1; y < grayImg->height-1; y++) {   // Skip top and bottom edges
+        for (int x = 1; x < grayImg->width-1; x++) {  // Skip left and right edges
+          // Output of this filter is shown as offset from 50% gray.
+          // This preserves transitions from low (dark) to high (light) value.
+          // Starting from zero will show only high edges on black instead.
+          float sum = bgCol;
+          for (int ky = -1; ky <= 1; ky++) {
+            for (int kx = -1; kx <= 1; kx++) {
+              // Calculate the adjacent pixel for this kernel point
+              int pos = (y + ky)*grayImg->width + (x + kx);
+    
+              // Image is grayscale, red/green/blue are identical
+              int val = blue(grayImg->pixel[pos]);
+              // Multiply adjacent pixels based on the kernel values
+              sum += kernel[ky+1][kx+1] * val;
+            }
+          }
+          // For this pixel in the new image, set the output value
+          // based on the sum from the kernel
+          edgeImg->pixel[y*edgeImg->width + x] = gray((int)sum);
+        }
+    }
+    return edgeImg;
+}
+        
 
 void printImageInfo(Image* img) {
     if(checkValid(img, "printImageInfo") >= 0) {
