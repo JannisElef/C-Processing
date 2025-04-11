@@ -118,10 +118,12 @@ Image* createImage(int w, int h) {
     return img; 
 }
 
-void destroyImage(Image *img) {
-    free(img->pixel);
-    free(img);
-    img = NULL;
+void freeImage(Image **img) {
+    if (img && *img) {
+        free((*img)->pixel);
+        free(*img);
+        *img = NULL;
+    }
 }
 
 Image *copyImage(Image *src) {
@@ -248,6 +250,30 @@ Image *rotate90(Image *img) {
     return rotated;
 }
 
+/* blends top and bottom image with opacity x */
+Image *blendImages(Image *top, Image *bottom, float x) {
+    if(checkValid(top, "blendImage") < 0) return NULL;
+    if(checkValid(bottom, "blendImage") < 0) return NULL;
+
+    if(top->width != bottom->width || top->height != bottom->height) {
+        printFunctionError("<top> image and <bottom> images differ in size", "blendImage()");
+        return NULL;
+    }
+    
+    Image *blended = createImage(top->height, top->width);
+
+    int c1, c2;
+    for(int i = 0; i < top->size; i++) {
+        c1 = top->pixel[i];
+        c2 = bottom->pixel[i];
+        blended->pixel[i] = rgb((unsigned char)((red(c1)   *1.0f * x) + (red(c2)   *1.0f * (1 - x))),
+                                (unsigned char)((green(c1) *1.0f * x) + (green(c2) *1.0f * (1 - x))),
+                                (unsigned char)((blue(c1)  *1.0f * x) + (blue(c2)  *1.0f * (1 - x))));
+    }
+    return blended;
+}
+        
+
 int grayscaleImage(Image* img) {
 
     if(checkValid(img, "grayscaleImage") < 0) return IMAGE_ERROR_NULLPTR;
@@ -283,6 +309,17 @@ int posterizeImage(Image* img, int steps) {
 
     return 0;
 }
+
+int invertImage(Image *img) {
+    if(checkValid(img, "invertImage") < 0) return IMAGE_ERROR_NULLPTR;
+
+    for(unsigned int i = 0; i < img->size; i++) {
+        img->pixel[i] = invertCol(img->pixel[i]);
+    }
+
+    return 0;
+}
+
 
 int getAvgImageCol(Image *img) {
     int r, g, b;
