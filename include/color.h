@@ -129,6 +129,11 @@ int lerpColors(int* gradientCols, size_t size, float t) {
     return lerpColor(c1, c2, blend);
 }
 
+int invertCol(int col) {
+    return rgb(255 -red(col), 255 -green(col), 255 -blue(col));
+}
+
+
 #pragma GCC diagnostic pop
 
 #endif
